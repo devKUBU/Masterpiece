@@ -38,7 +38,7 @@ input ENUM_TIMEFRAMES TrendTF = PERIOD_H1;
 
 //--- Input: Spread Filter
 input group "=== SPREAD FILTER ==="
-input int    MaxSpread     = 50;     // spread สูงสุด (points)
+input int    MaxSpread     = 300;    // spread สูงสุด (points) — EURUSD~20, XAUUSD~300
 
 //--- Input: Session 1
 input group "=== SESSION 1 ==="
@@ -75,9 +75,10 @@ input color  TextColor      = clrWhite;
 int handleFast, handleSlow;
 
 //--- State
-bool isRunning    = true;
-bool stopTrading  = false;
-double initBalance;
+bool     isRunning    = true;
+bool     stopTrading  = false;
+double   initBalance;
+datetime lastBarTime  = 0;  // New Bar filter
 
 //+------------------------------------------------------------------+
 //| Init                                                             |
@@ -132,16 +133,43 @@ void OnTick()
       return;
    }
 
+   //--- TP ตรวจทุก tick (ไม่ต้องรอ new bar)
+   CheckGroupTP();
+
+   //--- New Bar Filter: logic เปิด/grid ทำแค่ครั้งเดียวต่อแท่ง
+   datetime curBarTime = iTime(_Symbol, PERIOD_CURRENT, 0);
+   if(curBarTime == lastBarTime) return;
+   lastBarTime = curBarTime;
+
+   //--- EMA Warmup: ต้องมี bars พอสำหรับ EMA Slow
+   if(Bars(_Symbol, TrendTF) < EMA_Slow + 10)
+   {
+      Print("รอข้อมูล EMA: bars=", Bars(_Symbol, TrendTF), " ต้องการ=", EMA_Slow + 10);
+      return;
+   }
+
    //--- Session Check
-   if(!IsInSession()) return;
+   if(!IsInSession())
+   {
+      Print("นอก Session เวลา: ", TimeToString(TimeCurrent(), TIME_MINUTES));
+      return;
+   }
 
    //--- Spread Check
-   double spread = (double)SymbolInfoInteger(_Symbol, SYMBOL_SPREAD);
-   if(spread > MaxSpread) return;
+   int spread = (int)SymbolInfoInteger(_Symbol, SYMBOL_SPREAD);
+   if(spread > MaxSpread)
+   {
+      Print("Spread สูงเกิน: ", spread, " > ", MaxSpread);
+      return;
+   }
 
    //--- Trend Direction
    int trend = GetTrendDirection();
-   if(UseTrend && trend == 0) return;
+   if(UseTrend && trend == 0)
+   {
+      Print("Trend Neutral: EMA Fast=Slow ยังไม่ชัดเจน");
+      return;
+   }
 
    //--- Grid Logic
    int buyCount  = CountPositions(POSITION_TYPE_BUY);
@@ -150,18 +178,13 @@ void OnTick()
 
    if(totalGrid == 0)
    {
-      //--- เปิด position แรก
       if(!UseTrend || trend == 1)  OpenBuy();
       if(!UseTrend || trend == -1) OpenSell();
    }
    else
    {
-      //--- Grid: เพิ่ม position ถ้าราคาสวนทาง
       ManageGrid(buyCount, sellCount);
    }
-
-   //--- Check TP รวม
-   CheckGroupTP();
 }
 
 //+------------------------------------------------------------------+
