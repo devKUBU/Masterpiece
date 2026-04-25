@@ -19,14 +19,14 @@ input string EAComment     = "AuraTrend";
 
 //--- Input: Lot
 input group "=== LOT SETTINGS ==="
-input double BaseLot       = 0.01;   // Lot แรก
+input double BaseLot       = 0.001;  // Lot แรก (BTCUSDm min = 0.001)
 input double LotMultiplier = 1.5;    // ทวีคูณ lot เมื่อ grid เพิ่ม
-input int    MaxGridLevel  = 8;      // จำนวน grid สูงสุด
+input int    MaxGridLevel  = 6;      // จำนวน grid สูงสุด (BTC ใช้น้อยกว่าเพราะ lot หนัก)
 
 //--- Input: Grid
 input group "=== GRID SETTINGS ==="
-input int    GridStep      = 300;    // ระยะ grid (points)
-input int    TakeProfit    = 400;    // TP รวม (points)
+input int    GridStep      = 50000;  // ระยะ grid (points) — BTC $500 ต่อ step (1 pt = $0.01)
+input int    TakeProfit    = 30000;  // TP รวม (points) — ~$300 per lot
 input int    StopLoss      = 0;      // SL (0 = ปิดด้วย grid แทน)
 
 //--- Input: Trend Filter
@@ -38,25 +38,25 @@ input ENUM_TIMEFRAMES TrendTF = PERIOD_H1;
 
 //--- Input: Spread Filter
 input group "=== SPREAD FILTER ==="
-input int    MaxSpread     = 300;    // spread สูงสุด (points) — EURUSD~20, XAUUSD~300
+input int    MaxSpread     = 3000;   // spread สูงสุด (points) — BTCUSDm Exness ~1800-2500
 
 //--- Input: Session 1
 input group "=== SESSION 1 ==="
 input bool   S1_Enable     = true;
-input string S1_Start      = "00:00";
-input string S1_End        = "11:00";
+input string S1_Start      = "00:00";  // Asia session
+input string S1_End        = "08:00";
 
 //--- Input: Session 2
 input group "=== SESSION 2 ==="
 input bool   S2_Enable     = true;
-input string S2_Start      = "11:00";
-input string S2_End        = "17:00";
+input string S2_Start      = "08:00";  // Europe session
+input string S2_End        = "16:00";
 
 //--- Input: Session 3
 input group "=== SESSION 3 ==="
 input bool   S3_Enable     = true;
-input string S3_Start      = "17:00";
-input string S3_End        = "21:00";
+input string S3_Start      = "16:00";  // US session
+input string S3_End        = "23:59";
 
 //--- Input: Risk Management
 input group "=== RISK MANAGEMENT ==="
@@ -155,11 +155,11 @@ void OnTick()
       return;
    }
 
-   //--- Spread Check
+   //--- Spread Check: ห้ามเปิดไม้ใหม่ตอน spread ถ่าง
    int spread = (int)SymbolInfoInteger(_Symbol, SYMBOL_SPREAD);
    if(spread > MaxSpread)
    {
-      Print("Spread สูงเกิน: ", spread, " > ", MaxSpread);
+      Print("Spread สูงเกิน: ", spread, " pts — รอ spread แคบลง");
       return;
    }
 
@@ -167,7 +167,7 @@ void OnTick()
    int trend = GetTrendDirection();
    if(UseTrend && trend == 0)
    {
-      Print("Trend Neutral: EMA Fast=Slow ยังไม่ชัดเจน");
+      Print("Trend Neutral: EMA ยังไม่ชี้ทิศทาง");
       return;
    }
 
@@ -178,12 +178,15 @@ void OnTick()
 
    if(totalGrid == 0)
    {
+      //--- เปิดไม้แรก
       if(!UseTrend || trend == 1)  OpenBuy();
       if(!UseTrend || trend == -1) OpenSell();
    }
    else
    {
-      ManageGrid(buyCount, sellCount);
+      //--- Grid ถัดไป: เช็ค spread อีกครั้งก่อนเปิดเพิ่ม
+      if(spread <= MaxSpread)
+         ManageGrid(buyCount, sellCount);
    }
 }
 
