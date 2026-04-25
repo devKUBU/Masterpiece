@@ -440,16 +440,16 @@ void UpdateDashboard()
 
    int x = 18, y = 38;
    CreateLabel("AuraDash_Title",   "  AURA TREND GRID EA",              x,      y,      clrGold,      11);
-   CreateLabel("AuraDash_Line1",   StringFormat("─────────────────────────────"),  x, y+22,  clrDimGray,   8);
+   CreateLabel("AuraDash_Line1",   "─────────────────────────────",              x, y+22,  clrDimGray,   8);
    CreateLabel("AuraDash_Status",  "STATUS : " + status,                x,      y+38,   statClr);
    CreateLabel("AuraDash_Trend",   "TREND  : " + trendStr,              x,      y+54,   trendClr);
    CreateLabel("AuraDash_Spread",  StringFormat("SPREAD : %d pts",spread),        x, y+70,  (spread>MaxSpread?clrRed:clrWhite));
-   CreateLabel("AuraDash_Line2",   StringFormat("─────────────────────────────"),  x, y+84,  clrDimGray,   8);
+   CreateLabel("AuraDash_Line2",   "─────────────────────────────",              x, y+84,  clrDimGray,   8);
    CreateLabel("AuraDash_Balance", StringFormat("BALANCE: $%.2f", balance),       x, y+98,  TextColor);
    CreateLabel("AuraDash_Equity",  StringFormat("EQUITY : $%.2f", equity),        x, y+114, TextColor);
    CreateLabel("AuraDash_Profit",  StringFormat("FLOAT  : $%.2f", profit),        x, y+130, (profit>=0?clrLime:clrRed));
-   CreateLabel("AuraDash_DD",      StringFormat("DD%%    : %.2f%%", dd),           x, y+146, (dd>MaxDrawdownPct*0.8?clrRed:clrWhite));
-   CreateLabel("AuraDash_Line3",   StringFormat("─────────────────────────────"),  x, y+160, clrDimGray,   8);
+   CreateLabel("AuraDash_DD",      StringFormat("DD      : %.2f", dd) + "%",       x, y+146, (dd>MaxDrawdownPct*0.8?clrRed:clrWhite));
+   CreateLabel("AuraDash_Line3",   "─────────────────────────────",              x, y+160, clrDimGray,   8);
    CreateLabel("AuraDash_Buy",     StringFormat("BUY  POS : %d pos", buyPos),     x, y+174, BuyColor);
    CreateLabel("AuraDash_Sell",    StringFormat("SELL POS : %d pos", sellPos),    x, y+190, SellColor);
    CreateLabel("AuraDash_Lot",     StringFormat("TOTAL LOT: %.2f", totalLot),     x, y+206, TextColor);
